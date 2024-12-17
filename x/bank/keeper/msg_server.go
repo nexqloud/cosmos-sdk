@@ -62,11 +62,11 @@ func checkOnlineDevices() error {
 func (k msgServer) Send(goCtx context.Context, msg *types.MsgSend) (*types.MsgSendResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	if !isInWhiteList(msg.FromAddress) {
-		if err := checkOnlineDevices(); err != nil {
-			return nil, err
-		}
-	}
+	// if !isInWhiteList(msg.FromAddress) {
+	// 	if err := checkOnlineDevices(); err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 
 	if err := k.IsSendEnabledCoins(ctx, msg.Amount...); err != nil {
 		return nil, err
@@ -115,22 +115,22 @@ func (k msgServer) Send(goCtx context.Context, msg *types.MsgSend) (*types.MsgSe
 func (k msgServer) MultiSend(goCtx context.Context, msg *types.MsgMultiSend) (*types.MsgMultiSendResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	allInWhiteList := true
+	// allInWhiteList := true
 	// NOTE: totalIn == totalOut should already have been checked
 	for _, in := range msg.Inputs {
 		if err := k.IsSendEnabledCoins(ctx, in.Coins...); err != nil {
 			return nil, err
 		}
-		if !isInWhiteList(in.Address) {
-			allInWhiteList = false
-		}
+		// if !isInWhiteList(in.Address) {
+		// 	allInWhiteList = false
+		// }
 	}
 
-	if !allInWhiteList {
-		if err := checkOnlineDevices(); err != nil {
-			return nil, err
-		}
-	}
+	// if !allInWhiteList {
+	// 	if err := checkOnlineDevices(); err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 
 	for _, out := range msg.Outputs {
 		accAddr := sdk.MustAccAddressFromBech32(out.Address)
