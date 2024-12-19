@@ -2,8 +2,8 @@ package keeper
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/armon/go-metrics"
 	"github.com/nexqloud/nxqconfig"
@@ -41,21 +41,24 @@ func isInWhiteList(addr string) bool {
 }
 
 func checkOnlineDevices() error {
-	response, err := http.Get(devicesListApiUrl)
+	// Read the current devices count from $HOME/.nxqd/devices_count file
+	file_path := os.Getenv("HOME") + "/.nxqd/devices_count"
+	data, err := os.ReadFile(file_path)
 	if err != nil {
-		return sdkerrors.ErrInvalidRequest.Wrapf("Api for online devices is not working")
-	}
-	defer response.Body.Close()
-
-	var deviceList DeviceList
-	err = json.NewDecoder(response.Body).Decode(&deviceList)
-	if err != nil {
-		return sdkerrors.ErrInvalidRequest.Wrapf("Api for online devices is not working")
+		return sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Failed to read devices count")
 	}
 
-	if deviceList.Total < MinCloudDeviceCount {
-		return sdkerrors.ErrInvalidRequest.Wrapf("Insufficient online devices")
+	// Parse the devices count
+	devices_count, err := strconv.Atoi(string(data))
+	if err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Failed to parse devices count")
 	}
+
+	// If the devices count is less than MinCloudDeviceCount, return an error
+	if devices_count < MinCloudDeviceCount {
+		return sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Not enough devices are online")
+	}
+
 	return nil
 }
 
