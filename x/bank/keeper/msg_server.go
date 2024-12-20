@@ -66,9 +66,9 @@ func (k msgServer) Send(goCtx context.Context, msg *types.MsgSend) (*types.MsgSe
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	// if !isInWhiteList(msg.FromAddress) {
-	if err := checkOnlineDevices(); err != nil {
-		return nil, err
-	}
+	// if err := checkOnlineDevices(); err != nil {
+	// 	return nil, err
+	// }
 
 	if err := k.IsSendEnabledCoins(ctx, msg.Amount...); err != nil {
 		return nil, err
