@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/cometbft/cometbft-db"
 
 	"github.com/cosmos/cosmos-sdk/store/cachekv"
 	"github.com/cosmos/cosmos-sdk/store/dbadapter"
@@ -167,4 +167,30 @@ func (cms Store) GetKVStore(key types.StoreKey) types.KVStore {
 		panic(fmt.Sprintf("kv store with key %v has not been registered in stores", key))
 	}
 	return store.(types.KVStore)
+}
+
+// Copy creates a deep copy of the Store object
+func (cms Store) Copy() types.CacheMultiStore {
+	// Deep copy the db field
+	newDB := cms.db.Copy()
+
+	// Deep copy the cachekv stores map
+	newStores := make(map[types.StoreKey]types.CacheWrap, len(cms.stores))
+	for key, store := range cms.stores {
+		store, ok := store.(*cachekv.Store)
+		if ok {
+			newStores[key] = store.Copy()
+		}
+	}
+
+	// Create new Store with copied values
+	newStore := Store{
+		db:           newDB,
+		stores:       newStores,
+		keys:         cms.keys,
+		traceWriter:  cms.traceWriter,
+		traceContext: cms.traceContext,
+	}
+
+	return newStore
 }

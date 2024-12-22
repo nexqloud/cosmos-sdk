@@ -1,21 +1,20 @@
-# Cosmos SDK v0.46.13 Release Notes
+# Cosmos SDK v0.47.12 Release Notes
 
-This release includes few improvements and bug fixes.
-Notably, the [barberry security fix](https://forum.cosmos.network/t/cosmos-sdk-security-advisory-barberry/10825). All chains using Cosmos SDK v0.46.0 and above must upgrade to `v0.46.13` **immediately**. A chain is safe as soon as **33%+1** of the voting power has upgraded. Coordinate with your validators to upgrade as soon as possible.
+💬 [**Release Discussion**](https://github.com/orgs/cosmos/discussions/6)
 
-Additionally, it includes new commands for snapshots management and bootstrapping from a local snapshot (add `snapshot.Cmd(appCreator)` to the chain root command for using it).
+## 🚀 Highlights
 
-Did you know Cosmos SDK Twilight (a.k.a v0.47) has been released? Upgrade easily by reading the [upgrading guide](https://github.com/cosmos/cosmos-sdk/blob/release/v0.47.x/UPGRADING.md#v047x).
+For this month's patch release of the v0.47.x line, a few bug were fixed in the SDK.
+Notably:
 
-Ensure you have the following replaces in the `go.mod` of your application:
+* Remove txs from the mempool when they fail in `RecheckTX`
 
-```go
-// use cometbft
-replace github.com/tendermint/tendermint => github.com/cometbft/cometbft v0.34.28
-// replace broken goleveldb
-replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
-```
+Check out the [changelog](https://github.com/cosmos/cosmos-sdk/blob/v0.47.12/CHANGELOG.md) for an exhaustive list of changes or [compare changes](https://github.com/cosmos/cosmos-sdk/compare/v0.47.11...v0.47.12) from last release.
 
-Please see the [CHANGELOG](https://github.com/cosmos/cosmos-sdk/blob/release/v0.46.x/CHANGELOG.md) for an exhaustive list of changes.
+Refer to the [upgrading guide](https://github.com/cosmos/cosmos-sdk/blob/release/v0.50.x/UPGRADING.md) when migrating from `v0.47.x` to `v0.50.x`.
 
-**Full Commit History**: https://github.com/cosmos/cosmos-sdk/compare/v0.46.12...v0.46.13
+## Maintenance Policy
+
+v0.50 has been released which means the v0.47.x line is now supported for bug fixes only, as per our release policy. Earlier versions are not maintained.  
+
+Start integrating with [Cosmos SDK Eden (v0.50)](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.50.7) and enjoy and the new features and performance improvements.

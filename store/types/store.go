@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"io"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/cometbft/cometbft-db"
+	abci "github.com/cometbft/cometbft/abci/types"
 
-	pruningtypes "github.com/cosmos/cosmos-sdk/pruning/types"
 	snapshottypes "github.com/cosmos/cosmos-sdk/snapshots/types"
+	pruningtypes "github.com/cosmos/cosmos-sdk/store/pruning/types"
 	"github.com/cosmos/cosmos-sdk/types/kv"
 )
 
@@ -135,7 +135,8 @@ type MultiStore interface {
 // From MultiStore.CacheMultiStore()....
 type CacheMultiStore interface {
 	MultiStore
-	Write() // Writes operations to underlying KVStore
+	Write()                // Writes operations to underlying KVStore
+	Copy() CacheMultiStore // Returns a deep copy of the CacheMultiStore
 }
 
 // CommitMultiStore is an interface for a MultiStore without cache capabilities.
@@ -252,6 +253,7 @@ type CacheKVStore interface {
 
 	// Writes operations to underlying KVStore
 	Write()
+	Copy() CacheKVStore
 }
 
 // CommitKVStore is an interface for MultiStore.

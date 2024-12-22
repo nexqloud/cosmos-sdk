@@ -6,17 +6,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/nexqloud/nxqconfig"
-	"github.com/tendermint/tendermint/libs/log" // NexQloud: 2024.3.5
 )
 
 // TxFeeChecker check if the provided fee is enough and returns the effective fee and tx priority,
 // the effective fee should be deducted later, and the priority should be returned in abci response.
 type TxFeeChecker func(ctx sdk.Context, tx sdk.Tx) (sdk.Coins, int64, error)
 
-// DeductFeeDecorator deducts fees from the first signer of the tx
-// If the first signer does not have the funds to pay for the fees, return with InsufficientFunds error
-// Call next AnteHandler if fees successfully deducted
+// DeductFeeDecorator deducts fees from the fee payer. The fee payer is the fee granter (if specified) or first signer of the tx.
+// If the fee payer does not have the funds to pay for the fees, return an InsufficientFunds error.
+// Call next AnteHandler if fees successfully deducted.
 // CONTRACT: Tx must implement FeeTx interface to use DeductFeeDecorator
 type DeductFeeDecorator struct {
 	accountKeeper  AccountKeeper
@@ -91,7 +89,7 @@ func (dfd DeductFeeDecorator) checkDeductFee(ctx sdk.Context, sdkTx sdk.Tx, fee 
 		} else if !feeGranter.Equals(feePayer) {
 			err := dfd.feegrantKeeper.UseGrantedFees(ctx, feeGranter, feePayer, fee, sdkTx.GetMsgs())
 			if err != nil {
-				return sdkerrors.Wrapf(err, "%s does not not allow to pay fees for %s", feeGranter, feePayer)
+				return sdkerrors.Wrapf(err, "%s does not allow to pay fees for %s", feeGranter, feePayer)
 			}
 		}
 
@@ -123,36 +121,13 @@ func (dfd DeductFeeDecorator) checkDeductFee(ctx sdk.Context, sdkTx sdk.Tx, fee 
 	return nil
 }
 
-// NexQloud: 2024.3.5
-func logger(ctx sdk.Context) log.Logger {
-	return ctx.Logger().With("module", fmt.Sprintf("x/%s", "NexQloud"))
-}
-
 // DeductFees deducts fees from the given account.
 func DeductFees(bankKeeper types.BankKeeper, ctx sdk.Context, acc types.AccountI, fees sdk.Coins) error {
 	if !fees.IsValid() {
 		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "invalid fee amount: %s", fees)
 	}
 
-	// NexQloud: 2024.3.5
-	nxqLogger := logger(ctx)
-	maintenanceFee, ok := fees.SafeQuoInt(sdk.NewInt(2))
-	if !ok {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "SafeQuoInt failed")
-	}
-	// logger := logger(ctx)
-	nxqLogger.Info("Maintenance wallet", nxqconfig.GasCollector)
-	gasCollector, addrerr := sdk.AccAddressFromBech32(nxqconfig.GasCollector)
-	if addrerr != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "get account address failed")
-	}
-
-	err := bankKeeper.SendCoins(ctx, acc.GetAddress(), gasCollector, maintenanceFee)
-	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "sendCoins failed")
-	}
-
-	err = bankKeeper.SendCoinsFromAccountToModule(ctx, acc.GetAddress(), types.FeeCollectorName, maintenanceFee)
+	err := bankKeeper.SendCoinsFromAccountToModule(ctx, acc.GetAddress(), types.FeeCollectorName, fees)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, err.Error())
 	}
