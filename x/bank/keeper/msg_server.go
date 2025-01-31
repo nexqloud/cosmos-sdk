@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"sync"
 
 	"github.com/armon/go-metrics"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -26,8 +25,6 @@ type msgServer struct {
 }
 
 var _ types.MsgServer = msgServer{}
-var chainOpened bool
-var mu sync.Mutex
 
 // NewMsgServerImpl returns an implementation of the bank MsgServer interface
 // for the provided Keeper.
@@ -36,6 +33,8 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServer {
 }
 
 func IsChainOpen() bool {
+
+	log.Println("INSIDE THE CHAIN OPEN FUNCTION\n")
 	// Connect to the Ethereum node
 	client, err := ethclient.Dial(tools.NodeURL)
 	if err != nil {
@@ -63,14 +62,14 @@ func IsChainOpen() bool {
 	if err != nil {
 		log.Fatal("Failed to get online server count:", err)
 	}
-	fmt.Println("Current Online Server Count:", count)
+	log.Println("Current Online Server Count:", count)
 
 	// Get the state variable that tracks if 1000 servers were ever reached
 	hasReached1000, err := contract.Reached1000ServerCountValue(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal("Failed to check if 1000 server count was reached:", err)
 	}
-	fmt.Println("Has the chain ever reached 1000 servers?:", hasReached1000)
+	log.Println("Has the chain ever reached 1000 servers?:", hasReached1000)
 
 	// If server count is below 1000, check if it has ever reached 1000 before
 	if count.Cmp(big.NewInt(1000)) < 0 {
