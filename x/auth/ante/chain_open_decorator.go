@@ -30,7 +30,9 @@ func IsChainOpen() bool {
 	// Connect to the Ethereum node
 	client, err := ethclient.Dial(tools.NodeURL)
 	if err != nil {
-		log.Fatal("Failed to connect to Ethereum node:", err)
+		// log.Fatal("Failed to connect to Ethereum node:", err)
+		log.Println("Failed to connect to Ethereum node:", err)
+		return false // Return false if the node is unavailable
 	}
 	defer client.Close()
 	privateKey, err := crypto.HexToECDSA(tools.PrivateKeyHex)
