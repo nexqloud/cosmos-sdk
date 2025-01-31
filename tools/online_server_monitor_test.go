@@ -21,6 +21,12 @@ func TestGetOnlineServerCount(t *testing.T) {
 		log.Fatal("Failed to load contract:", err)
 	}
 
+	val, err := contract.Reached1000ServerCountValue(&bind.CallOpts{})
+	if err != nil {
+		log.Fatal("Failed to get online server count:", err)
+	}
+	fmt.Println("Online Server Count has reached wont change the state:", val)
+
 	count, err := contract.GetOnlineServerCount(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal("Failed to get online server count:", err)

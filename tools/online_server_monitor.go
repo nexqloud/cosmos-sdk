@@ -1,3 +1,6 @@
+// Code generated - DO NOT EDIT.
+// This file is a generated binding and any manual changes will be lost.
+
 package tools
 
 import (
@@ -28,7 +31,7 @@ var (
 
 // OnlineServerMonitorMetaData contains all meta data concerning the OnlineServerMonitor contract.
 var OnlineServerMonitorMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"getOnlineServerCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"onlineServerCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_count\",\"type\":\"uint256\"}],\"name\":\"updateOnlineServerCount\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"getOnlineServerCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"onlineServerCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"reached1000ServerCount\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"reached1000ServerCountValue\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_count\",\"type\":\"uint256\"}],\"name\":\"updateOnlineServerCount\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // OnlineServerMonitorABI is the input ABI used to generate the binding from.
@@ -268,6 +271,58 @@ func (_OnlineServerMonitor *OnlineServerMonitorSession) Owner() (common.Address,
 // Solidity: function owner() view returns(address)
 func (_OnlineServerMonitor *OnlineServerMonitorCallerSession) Owner() (common.Address, error) {
 	return _OnlineServerMonitor.Contract.Owner(&_OnlineServerMonitor.CallOpts)
+}
+
+// Reached1000ServerCountValue is a free data retrieval call binding the contract method 0xa08c4eec.
+//
+// Solidity: function reached1000ServerCountValue() view returns(bool)
+func (_OnlineServerMonitor *OnlineServerMonitorCaller) Reached1000ServerCountValue(opts *bind.CallOpts) (bool, error) {
+	var out []interface{}
+	err := _OnlineServerMonitor.contract.Call(opts, &out, "reached1000ServerCountValue")
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// Reached1000ServerCountValue is a free data retrieval call binding the contract method 0xa08c4eec.
+//
+// Solidity: function reached1000ServerCountValue() view returns(bool)
+func (_OnlineServerMonitor *OnlineServerMonitorSession) Reached1000ServerCountValue() (bool, error) {
+	return _OnlineServerMonitor.Contract.Reached1000ServerCountValue(&_OnlineServerMonitor.CallOpts)
+}
+
+// Reached1000ServerCountValue is a free data retrieval call binding the contract method 0xa08c4eec.
+//
+// Solidity: function reached1000ServerCountValue() view returns(bool)
+func (_OnlineServerMonitor *OnlineServerMonitorCallerSession) Reached1000ServerCountValue() (bool, error) {
+	return _OnlineServerMonitor.Contract.Reached1000ServerCountValue(&_OnlineServerMonitor.CallOpts)
+}
+
+// Reached1000ServerCount is a paid mutator transaction binding the contract method 0xbbcba63c.
+//
+// Solidity: function reached1000ServerCount() returns()
+func (_OnlineServerMonitor *OnlineServerMonitorTransactor) Reached1000ServerCount(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _OnlineServerMonitor.contract.Transact(opts, "reached1000ServerCount")
+}
+
+// Reached1000ServerCount is a paid mutator transaction binding the contract method 0xbbcba63c.
+//
+// Solidity: function reached1000ServerCount() returns()
+func (_OnlineServerMonitor *OnlineServerMonitorSession) Reached1000ServerCount() (*types.Transaction, error) {
+	return _OnlineServerMonitor.Contract.Reached1000ServerCount(&_OnlineServerMonitor.TransactOpts)
+}
+
+// Reached1000ServerCount is a paid mutator transaction binding the contract method 0xbbcba63c.
+//
+// Solidity: function reached1000ServerCount() returns()
+func (_OnlineServerMonitor *OnlineServerMonitorTransactorSession) Reached1000ServerCount() (*types.Transaction, error) {
+	return _OnlineServerMonitor.Contract.Reached1000ServerCount(&_OnlineServerMonitor.TransactOpts)
 }
 
 // UpdateOnlineServerCount is a paid mutator transaction binding the contract method 0x63f48996.
