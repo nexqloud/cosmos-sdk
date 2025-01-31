@@ -131,10 +131,10 @@ func IsAddressAllowed(address string, amounts sdk.Coins) bool {
 func (k msgServer) Send(goCtx context.Context, msg *types.MsgSend) (*types.MsgSendResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	// Check if chain is open or not
-	if !IsChainOpen() {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "chain is closed")
-	}
+	// // Check if chain is open or not
+	// if !IsChainOpen() {
+	// 	return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "chain is closed")
+	// }
 
 	// Check if sender address is allowed to send the amount
 	if !IsAddressAllowed(msg.FromAddress, msg.Amount) {
@@ -181,10 +181,10 @@ func (k msgServer) Send(goCtx context.Context, msg *types.MsgSend) (*types.MsgSe
 func (k msgServer) MultiSend(goCtx context.Context, msg *types.MsgMultiSend) (*types.MsgMultiSendResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	// Check if chain is open or not
-	if !IsChainOpen() {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "chain is closed")
-	}
+	// // Check if chain is open or not
+	// if !IsChainOpen() {
+	// 	return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "chain is closed")
+	// }
 
 	// NOTE: totalIn == totalOut should already have been checked
 	for _, in := range msg.Inputs {
