@@ -2,10 +2,17 @@ package keeper
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"sync"
 
 	"github.com/armon/go-metrics"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
+	"github.com/cosmos/cosmos-sdk/tools"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -17,6 +24,8 @@ type msgServer struct {
 }
 
 var _ types.MsgServer = msgServer{}
+var chainOpened bool
+var mu sync.Mutex
 
 // NewMsgServerImpl returns an implementation of the bank MsgServer interface
 // for the provided Keeper.
@@ -24,8 +33,76 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServer {
 	return &msgServer{Keeper: keeper}
 }
 
+// func IsChainOpen() bool {
+// 	//Get the boolean value from the smart contract and return it
+
+// 	client, err := ethclient.Dial(tools.NodeURL)
+// 	if err != nil {
+// 		log.Fatal("Failed to connect to Ethereum node:", err)
+// 	}
+
+// 	contract, err := tools.NewOnlineServerMonitor(common.HexToAddress(tools.ContractAddress), client)
+// 	if err != nil {
+// 		log.Fatal("Failed to load contract:", err)
+// 	}
+
+// 	count, err := contract.GetOnlineServerCount(&bind.CallOpts{})
+// 	if err != nil {
+// 		log.Fatal("Failed to get online server count:", err)
+// 	}
+// 	fmt.Println("Online Server Count:", count)
+
+// 	return true
+// }
+
+func IsChainOpen() bool {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if chainOpened {
+		return true
+	}
+
+	client, err := ethclient.Dial(tools.NodeURL)
+	if err != nil {
+		log.Fatal("Failed to connect to Ethereum node:", err)
+	}
+
+	contract, err := tools.NewOnlineServerMonitor(common.HexToAddress(tools.ContractAddress), client)
+	if err != nil {
+		log.Fatal("Failed to load contract:", err)
+	}
+
+	count, err := contract.GetOnlineServerCount(&bind.CallOpts{})
+	if err != nil {
+		log.Fatal("Failed to get online server count:", err)
+	}
+	fmt.Println("Online Server Count:", count)
+
+	if count.Cmp(sdk.NewInt(1000).BigInt()) >= 0 {
+		chainOpened = true
+	}
+
+	return chainOpened
+}
+
+func IsAddressAllowed(address string, amounts sdk.Coins) bool {
+	// TODO: Get the boolean value from the smart contract by sending the address and value and return it
+	return true
+}
+
 func (k msgServer) Send(goCtx context.Context, msg *types.MsgSend) (*types.MsgSendResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	// Check if chain is open or not
+	if !IsChainOpen() {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "chain is closed")
+	}
+
+	// Check if sender address is allowed to send the amount
+	if !IsAddressAllowed(msg.FromAddress, msg.Amount) {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "sender address is not allowed to send the amount")
+	}
 
 	if err := k.IsSendEnabledCoins(ctx, msg.Amount...); err != nil {
 		return nil, err
