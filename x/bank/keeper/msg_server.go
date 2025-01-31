@@ -41,7 +41,7 @@ func IsChainOpen() bool {
 		log.Fatal("Failed to connect to Ethereum node:", err)
 	}
 	defer client.Close()
-		privateKey, err := crypto.HexToECDSA(tools.PrivateKeyHex)
+	privateKey, err := crypto.HexToECDSA(tools.PrivateKeyHex)
 	if err != nil {
 		log.Fatal("Failed to load private key:", err)
 	}
@@ -80,7 +80,7 @@ func IsChainOpen() bool {
 
 	// If server count is 1000 or more and hasReached1000 is false, update the contract state
 	if count.Cmp(big.NewInt(1000)) >= 0 && !hasReached1000 {
-		
+
 		tx, err := contract.Reached1000ServerCount(auth)
 		if err != nil {
 			log.Fatal("Failed to update Reached1000ServerCountValue:", err)
@@ -91,7 +91,6 @@ func IsChainOpen() bool {
 
 	return false
 }
-
 
 // func IsChainOpen() bool {
 // 	mu.Lock()
@@ -181,6 +180,11 @@ func (k msgServer) Send(goCtx context.Context, msg *types.MsgSend) (*types.MsgSe
 
 func (k msgServer) MultiSend(goCtx context.Context, msg *types.MsgMultiSend) (*types.MsgMultiSendResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	// Check if chain is open or not
+	if !IsChainOpen() {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "chain is closed")
+	}
 
 	// NOTE: totalIn == totalOut should already have been checked
 	for _, in := range msg.Inputs {
