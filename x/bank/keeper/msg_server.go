@@ -74,7 +74,7 @@ func IsChainOpen() bool {
 	// If server count is below 1000, check if it has ever reached 1000 before
 	if count.Cmp(big.NewInt(1000)) < 0 {
 		if hasReached1000 {
-			return true
+			return false
 		}
 	}
 
