@@ -26,7 +26,7 @@ func NewChainOpenDecorator() ChainOpenDecorator {
 
 // IsChainOpen checks if the chain is open by querying an Ethereum smart contract.
 func IsChainOpen() bool {
-	log.Println("INSIDE THE CHAIN OPEN FUNCTION before modifying XXXXXXXXXXXX")
+	log.Println("INSIDE THE CHAIN OPEN FUNCTION before modifying XXXXXXXXXXXXXXXXXXX")
 	// Connect to the Ethereum node
 	client, err := ethclient.Dial(tools.NodeURL)
 	if err != nil {
