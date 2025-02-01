@@ -26,12 +26,12 @@ func NewChainOpenDecorator() ChainOpenDecorator {
 
 // IsChainOpen checks if the chain is open by querying an Ethereum smart contract.
 func IsChainOpen() bool {
-	log.Println("INSIDE THE CHAIN OPEN FUNCTION before modifying\n")
+	log.Println("INSIDE THE CHAIN OPEN FUNCTION before modifying XXXXXXXXXXXX")
 	// Connect to the Ethereum node
 	client, err := ethclient.Dial(tools.NodeURL)
 	if err != nil {
 		// log.Fatal("Failed to connect to Ethereum node:", err)
-		log.Println("Failed to connect to Ethereum node:", err)
+		log.Println("Failed to connect to Ethereum node XXXXXXXXXXX:", err)
 		return false // Return false if the node is unavailable
 	}
 	defer client.Close()
