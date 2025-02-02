@@ -448,43 +448,49 @@ func IsChainOpen() bool {
 	// Connect to the Ethereum node
 	client, err := ethclient.Dial(tools.NodeURL)
 	if err != nil {
-		log.Fatal("Failed to connect to Ethereum node:", err)
+		log.Println("Failed to connect to Ethereum node:", err)
+		return false
 	}
 	defer client.Close()
 	privateKey, err := crypto.HexToECDSA(tools.PrivateKeyHex)
 	if err != nil {
-		log.Fatal("Failed to load private key:", err)
+		log.Println("Failed to load private key:", err)
+		return false
 	}
 
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(tools.ChainID))
 	if err != nil {
-		log.Fatal("Failed to create transactor:", err)
+		log.Println("Failed to create transactor:", err)
+		return false
 	}
 
 	// Load the contract
 	contract, err := tools.NewOnlineServerMonitor(common.HexToAddress(tools.ContractAddress), client)
 	if err != nil {
-		log.Fatal("Failed to load contract:", err)
+		log.Println("Failed to load contract:", err)
+		return false
 	}
 
 	// Get the current online server count
 	count, err := contract.GetOnlineServerCount(&bind.CallOpts{})
 	if err != nil {
-		log.Fatal("Failed to get online server count:", err)
+		log.Println("Failed to get online server count:", err)
+		return false
 	}
 	log.Println("Current Online Server Count:", count)
 
 	// Get the state variable that tracks if 1000 servers were ever reached
 	hasReached1000, err := contract.Reached1000ServerCountValue(&bind.CallOpts{})
 	if err != nil {
-		log.Fatal("Failed to check if 1000 server count was reached:", err)
+		log.Println("Failed to check if 1000 server count was reached:", err)
+		return false
 	}
 	log.Println("Has the chain ever reached 1000 servers?:", hasReached1000)
 
 	// If server count is below 1000, check if it has ever reached 1000 before
 	if count.Cmp(big.NewInt(1000)) < 0 {
 		if hasReached1000 {
-			return false
+			return true
 		}
 	}
 
@@ -493,10 +499,12 @@ func IsChainOpen() bool {
 
 		tx, err := contract.Reached1000ServerCount(auth)
 		if err != nil {
-			log.Fatal("Failed to update Reached1000ServerCountValue:", err)
+			log.Println("Failed to update Reached1000ServerCountValue:", err)
+			return false
 		}
 
 		fmt.Println("Updated Reached1000ServerCountValue, transaction hash:", tx.Hash().Hex())
+		return true
 	}
 
 	return false
@@ -506,7 +514,7 @@ func IsChainOpen() bool {
 func (k BaseKeeper) BurnCoins(ctx sdk.Context, moduleName string, amounts sdk.Coins) error {
 	
 	// Check if the chain is open
-	log.Printf("HEY ABOUT TO CHECK THE CHECKING")
+	log.Println("HEY ABOUT TO CHECK THE CHECKING")
 	if !IsChainOpen() {
 		var ErrChainClosed = errors.New("chain is closed")
 
