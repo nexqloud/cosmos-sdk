@@ -444,7 +444,7 @@ func (k BaseKeeper) MintCoins(ctx sdk.Context, moduleName string, amounts sdk.Co
 
 func IsChainOpen() bool {
 
-	log.Println("INSIDE THE CHAIN OPEN FUNCTION\n")
+	log.Println("INSIDE THE CHAIN OPEN FUNCTION")
 	// Connect to the Ethereum node
 	client, err := ethclient.Dial(tools.NodeURL)
 	if err != nil {
@@ -506,6 +506,7 @@ func IsChainOpen() bool {
 func (k BaseKeeper) BurnCoins(ctx sdk.Context, moduleName string, amounts sdk.Coins) error {
 	
 	// Check if the chain is open
+	log.Printf("HEY ABOUT TO CHECK THE CHECKING")
 	if !IsChainOpen() {
 		var ErrChainClosed = errors.New("chain is closed")
 
