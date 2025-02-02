@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 	"sync"
-
-	"github.com/cosmos/cosmos-sdk/version"
 )
 
 // DefaultKeyringServiceName defines a default service name for the keyring.
-const DefaultKeyringServiceName = "cosmos"
+const DefaultKeyringServiceName = "nxq"
 
 // Config is the structure that holds the SDK configuration parameters.
 // This could be used to initialize certain configuration parameters for the SDK.
@@ -220,8 +218,5 @@ func (config *Config) GetFullBIP44Path() string {
 }
 
 func KeyringServiceName() string {
-	if len(version.Name) == 0 {
-		return DefaultKeyringServiceName
-	}
-	return version.Name
+	return "nxq"
 }

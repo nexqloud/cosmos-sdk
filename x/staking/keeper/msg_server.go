@@ -2,151 +2,36 @@ package keeper
 
 import (
 	"context"
-	"encoding/hex"
-	"encoding/json"
-	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
+	"github.com/armon/go-metrics"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/armon/go-metrics"
-
-	"math/big"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 )
-
-const (
-	configURL   = "https://raw.githubusercontent.com/nexqloud/nxqconfig/main/nxqconfig.json"
-	rpcURL      = "http://127.0.0.1:8545"
-	contractABI = `[
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        }
-      ],
-      "name": "balanceOf",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    }
-  ]`
-)
-
-type NxqConfig struct {
-	MaintenanceWallet      string `json:"MaintenanceWallet"`
-	ContractAddress        string `json:"ContractAddress"`
-	MinValidatorToken      int64  `json:"MinValidatorToken"`
-	MinValidatorNFTBalance int64  `json:"MinValidatorNFTBalance"`
-}
 
 type msgServer struct {
-	Keeper
+	*Keeper
 }
 
 // NewMsgServerImpl returns an implementation of the bank MsgServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper Keeper) types.MsgServer {
+func NewMsgServerImpl(keeper *Keeper) types.MsgServer {
 	return &msgServer{Keeper: keeper}
 }
 
 var _ types.MsgServer = msgServer{}
 
-func Convert2EthAddress(address string, bech32Prefix string) (string, error) {
-	data, err := sdk.GetFromBech32(address, bech32Prefix)
-	if err != nil {
-		return "", err
-	}
-
-	ethAddress := "0x" + hex.EncodeToString(data[len(data)-20:])
-	return ethAddress, nil
-}
-
-func getBalances(address string, contract string) (int64, int64, error) {
-
-	client, err := ethclient.Dial(rpcURL)
-
-	if err != nil {
-		return 0, 0, sdkerrors.ErrInvalidRequest.Wrapf("RPC is not valid")
-	}
-
-	ethAddress, err := Convert2EthAddress(address, "nxq")
-	if err != nil {
-		return 0, 0, sdkerrors.ErrInvalidAddress.Wrapf("invalid address: %v", err)
-	}
-
-	walletAddress := common.HexToAddress((ethAddress))
-	tokenBalance, err := client.BalanceAt(context.Background(), walletAddress, nil)
-	if err != nil {
-
-	}
-
-	contractAddress := common.HexToAddress((contract))
-	parsedABI, err := abi.JSON(strings.NewReader(contractABI))
-	if err != nil {
-		return tokenBalance.Int64(), 0, sdkerrors.ErrInvalidRequest.Wrapf("invalid abi: %s", err)
-	}
-	data, err := parsedABI.Pack("balanceOf", walletAddress)
-	if err != nil {
-		return tokenBalance.Int64(), 0, sdkerrors.ErrInvalidRequest.Wrapf("Failed to pack data for balanceOf: %s", err)
-	}
-	callMsg := ethereum.CallMsg{
-		To:   &contractAddress,
-		Data: data,
-	}
-	result, err := client.CallContract(context.Background(), callMsg, nil)
-	if err != nil {
-		return tokenBalance.Int64(), 0, sdkerrors.ErrInvalidRequest.Wrapf("Failed to call contract: %s", err)
-	}
-
-	if len(result) == 0 {
-		return tokenBalance.Int64(), 0, sdkerrors.ErrInvalidAddress.Wrapf("Invalid NFT contract address")
-	}
-
-	results, err := parsedABI.Unpack("balanceOf", result)
-	if err != nil {
-		return tokenBalance.Int64(), 0, sdkerrors.ErrInvalidRequest.Wrapf("Failed to unpack result: %s", err)
-	}
-
-	nftBalance := results[0].(*big.Int)
-	return tokenBalance.Int64(), nftBalance.Int64(), nil
-}
-
 // CreateValidator defines a method for creating a new validator
 func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateValidator) (*types.MsgCreateValidatorResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
-
-	response, err := http.Get(configURL)
-	if err != nil {
-		return nil, sdkerrors.ErrInvalidRequest.Wrapf("Configuration file is not found")
-	}
-	defer response.Body.Close()
-
-	var config NxqConfig
-	err = json.NewDecoder(response.Body).Decode(&config)
-	if err != nil {
-		return nil, sdkerrors.ErrInvalidRequest.Wrapf("Configuration file is not valid")
-	}
 
 	valAddr, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
 	if err != nil {
@@ -155,21 +40,6 @@ func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateVa
 
 	if msg.Commission.Rate.LT(k.MinCommissionRate(ctx)) {
 		return nil, sdkerrors.Wrapf(types.ErrCommissionLTMinRate, "cannot set validator commission to less than minimum rate of %s", k.MinCommissionRate(ctx))
-	}
-
-	if msg.Description.Details != "From-GenTx" {
-		tokenBalance, nftBalance, err := getBalances(msg.DelegatorAddress, config.ContractAddress)
-		if err != nil {
-			return nil, err
-		}
-
-		if nftBalance < config.MinValidatorNFTBalance {
-			return nil, sdkerrors.Wrapf(types.ErrInsufficientNFT, "delegator should have %d nfts", config.MinValidatorNFTBalance)
-		}
-
-		if tokenBalance < config.MinValidatorToken {
-			return nil, sdkerrors.Wrapf(types.ErrInsufficientToken, "delegator should have %d tokens", config.MinValidatorToken)
-		}
 	}
 
 	// check to see if the pubkey or sender has been registered before
@@ -242,7 +112,7 @@ func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateVa
 	k.SetNewValidatorByPowerIndex(ctx, validator)
 
 	// call the after-creation hook
-	if err := k.AfterValidatorCreated(ctx, validator.GetOperator()); err != nil {
+	if err := k.Hooks().AfterValidatorCreated(ctx, validator.GetOperator()); err != nil {
 		return nil, err
 	}
 
@@ -259,11 +129,6 @@ func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateVa
 			types.EventTypeCreateValidator,
 			sdk.NewAttribute(types.AttributeKeyValidator, msg.ValidatorAddress),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Value.String()),
-		),
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAddress),
 		),
 	})
 
@@ -298,7 +163,7 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 		}
 
 		// call the before-modification hook since we're about to update the commission
-		if err := k.BeforeValidatorModified(ctx, valAddr); err != nil {
+		if err := k.Hooks().BeforeValidatorModified(ctx, valAddr); err != nil {
 			return nil, err
 		}
 
@@ -324,11 +189,6 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 			types.EventTypeEditValidator,
 			sdk.NewAttribute(types.AttributeKeyCommissionRate, validator.Commission.String()),
 			sdk.NewAttribute(types.AttributeKeyMinSelfDelegation, validator.MinSelfDelegation.String()),
-		),
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.ValidatorAddress),
 		),
 	})
 
@@ -381,13 +241,9 @@ func (k msgServer) Delegate(goCtx context.Context, msg *types.MsgDelegate) (*typ
 		sdk.NewEvent(
 			types.EventTypeDelegate,
 			sdk.NewAttribute(types.AttributeKeyValidator, msg.ValidatorAddress),
+			sdk.NewAttribute(types.AttributeKeyDelegator, msg.DelegatorAddress),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
 			sdk.NewAttribute(types.AttributeKeyNewShares, newShares.String()),
-		),
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAddress),
 		),
 	})
 
@@ -450,11 +306,6 @@ func (k msgServer) BeginRedelegate(goCtx context.Context, msg *types.MsgBeginRed
 			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
 			sdk.NewAttribute(types.AttributeKeyCompletionTime, completionTime.Format(time.RFC3339)),
 		),
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAddress),
-		),
 	})
 
 	return &types.MsgBeginRedelegateResponse{
@@ -509,12 +360,8 @@ func (k msgServer) Undelegate(goCtx context.Context, msg *types.MsgUndelegate) (
 			types.EventTypeUnbond,
 			sdk.NewAttribute(types.AttributeKeyValidator, msg.ValidatorAddress),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
+			sdk.NewAttribute(types.AttributeKeyDelegator, msg.DelegatorAddress),
 			sdk.NewAttribute(types.AttributeKeyCompletionTime, completionTime.Format(time.RFC3339)),
-		),
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAddress),
 		),
 	})
 
@@ -628,4 +475,19 @@ func (k msgServer) CancelUnbondingDelegation(goCtx context.Context, msg *types.M
 	)
 
 	return &types.MsgCancelUnbondingDelegationResponse{}, nil
+}
+
+func (ms msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	if ms.authority != msg.Authority {
+		return nil, sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "invalid authority; expected %s, got %s", ms.authority, msg.Authority)
+	}
+
+	// store params
+	if err := ms.SetParams(ctx, msg.Params); err != nil {
+		return nil, err
+	}
+
+	return &types.MsgUpdateParamsResponse{}, nil
 }

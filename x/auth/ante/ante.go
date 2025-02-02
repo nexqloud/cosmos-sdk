@@ -36,7 +36,9 @@ func NewAnteHandler(options HandlerOptions) (sdk.AnteHandler, error) {
 	}
 
 	anteDecorators := []sdk.AnteDecorator{
+		
 		NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
+		NewChainOpenDecorator(), 
 		NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
 		NewValidateBasicDecorator(),
 		NewTxTimeoutHeightDecorator(),

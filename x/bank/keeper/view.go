@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"cosmossdk.io/math"
-	"github.com/tendermint/tendermint/libs/log"
+	"github.com/cometbft/cometbft/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
@@ -27,6 +27,7 @@ type ViewKeeper interface {
 	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
 	LockedCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
 	SpendableCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
+	SpendableCoin(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
 
 	IterateAccountBalances(ctx sdk.Context, addr sdk.AccAddress, cb func(coin sdk.Coin) (stop bool))
 	IterateAllBalances(ctx sdk.Context, cb func(address sdk.AccAddress, coin sdk.Coin) (stop bool))
@@ -115,7 +116,7 @@ func (k BaseViewKeeper) IterateAccountBalances(ctx sdk.Context, addr sdk.AccAddr
 	accountStore := k.getAccountStore(ctx, addr)
 
 	iterator := accountStore.Iterator(nil, nil)
-	defer iterator.Close()
+	defer sdk.LogDeferred(ctx.Logger(), func() error { return iterator.Close() })
 
 	for ; iterator.Valid(); iterator.Next() {
 		denom := string(iterator.Key())
@@ -165,6 +166,8 @@ func (k BaseViewKeeper) IterateAllBalances(ctx sdk.Context, cb func(sdk.AccAddre
 // For vesting accounts, LockedCoins is delegated to the concrete vesting account
 // type.
 func (k BaseViewKeeper) LockedCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+	// TODO: Use this function to block any address from performing transactions (velocity contracts)
+
 	acc := k.ak.GetAccount(ctx, addr)
 	if acc != nil {
 		vacc, ok := acc.(types.VestingAccount)
@@ -182,6 +185,15 @@ func (k BaseViewKeeper) LockedCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Co
 func (k BaseViewKeeper) SpendableCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
 	spendable, _ := k.spendableCoins(ctx, addr)
 	return spendable
+}
+
+// SpendableCoin returns the balance of specific denomination of spendable coins
+// for an account by address. If the account has no spendable coin, a zero Coin
+// is returned.
+func (k BaseViewKeeper) SpendableCoin(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+	balance := k.GetBalance(ctx, addr, denom)
+	locked := k.LockedCoins(ctx, addr)
+	return balance.SubAmount(locked.AmountOf(denom))
 }
 
 // spendableCoins returns the coins the given address can spend alongside the total amount of coins it holds.
@@ -242,6 +254,10 @@ func (k BaseViewKeeper) getDenomAddressPrefixStore(ctx sdk.Context, denom string
 
 // UnmarshalBalanceCompat unmarshal balance amount from storage, it's backward-compatible with the legacy format.
 func UnmarshalBalanceCompat(cdc codec.BinaryCodec, bz []byte, denom string) (sdk.Coin, error) {
+	if err := sdk.ValidateDenom(denom); err != nil {
+		return sdk.Coin{}, err
+	}
+
 	amount := math.ZeroInt()
 	if bz == nil {
 		return sdk.NewCoin(denom, amount), nil

@@ -16,32 +16,8 @@ const (
 	TypeMsgCreateValidator           = "create_validator"
 	TypeMsgDelegate                  = "delegate"
 	TypeMsgBeginRedelegate           = "begin_redelegate"
+	TypeMsgUpdateParams              = "update_params"
 )
-
-// const (
-// 	rpcURL      = "http://127.0.0.1:8545"
-// 	contractABI = `[
-//     {
-//       "inputs": [
-//         {
-//           "internalType": "address",
-//           "name": "owner",
-//           "type": "address"
-//         }
-//       ],
-//       "name": "balanceOf",
-//       "outputs": [
-//         {
-//           "internalType": "uint256",
-//           "name": "",
-//           "type": "uint256"
-//         }
-//       ],
-//       "stateMutability": "view",
-//       "type": "function"
-//     },
-//   ]`
-// )
 
 var (
 	_ sdk.Msg                            = &MsgCreateValidator{}
@@ -52,6 +28,7 @@ var (
 	_ sdk.Msg                            = &MsgUndelegate{}
 	_ sdk.Msg                            = &MsgBeginRedelegate{}
 	_ sdk.Msg                            = &MsgCancelUnbondingDelegation{}
+	_ sdk.Msg                            = &MsgUpdateParams{}
 )
 
 // NewMsgCreateValidator creates a new MsgCreateValidator instance.
@@ -108,65 +85,6 @@ func (msg MsgCreateValidator) GetSignBytes() []byte {
 	return sdk.MustSortJSON(bz)
 }
 
-// func Convert2EthAddress(address string, bech32Prefix string) (string, error) {
-// 	data, err := sdk.GetFromBech32(address, bech32Prefix)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	ethAddress := "0x" + hex.EncodeToString(data[len(data)-20:])
-// 	return ethAddress, nil
-// }
-
-// func getBalances(address string) (int64, int64, error) {
-// 	client, err := ethclient.Dial(rpcURL)
-
-// 	if err != nil {
-// 		return 0, 0, sdkerrors.ErrInvalidRequest.Wrapf("RPC is not valid")
-// 	}
-
-// 	ethAddress, err := Convert2EthAddress(address, "nxq")
-// 	if err != nil {
-// 		return 0, 0, sdkerrors.ErrInvalidAddress.Wrapf("invalid address: %s", err)
-// 	}
-
-// 	walletAddress := common.HexToAddress((ethAddress))
-// 	tokenBalance, err := client.BalanceAt(context.Background(), walletAddress, nil)
-// 	if err != nil {
-
-// 	}
-
-// 	contractAddress := common.HexToAddress((nxqconfig.ContractAddress))
-// 	parsedABI, err := abi.JSON(strings.NewReader(contractABI))
-// 	if err != nil {
-// 		return tokenBalance.Int64(), 0, sdkerrors.ErrInvalidRequest.Wrapf("invalid abi: %s", err)
-// 	}
-// 	data, err := parsedABI.Pack("balanceOf", walletAddress)
-// 	if err != nil {
-// 		return tokenBalance.Int64(), 0, sdkerrors.ErrInvalidRequest.Wrapf("Failed to pack data for balanceOf: %s", err)
-// 	}
-// 	callMsg := ethereum.CallMsg{
-// 		To:   &contractAddress,
-// 		Data: data,
-// 	}
-// 	result, err := client.CallContract(context.Background(), callMsg, nil)
-// 	if err != nil {
-// 		return tokenBalance.Int64(), 0, sdkerrors.ErrInvalidRequest.Wrapf("Failed to call contract: %s", err)
-// 	}
-
-// 	if len(result) == 0 {
-// 		return tokenBalance.Int64(), 0, sdkerrors.ErrInvalidAddress.Wrapf("Invalid address: %s", err)
-// 	}
-
-// 	results, err := parsedABI.Unpack("balanceOf", result)
-// 	if err != nil {
-// 		return tokenBalance.Int64(), 0, sdkerrors.ErrInvalidRequest.Wrapf("Failed to unpack result: %s", err)
-// 	}
-
-// 	nftBalance := results[0].(*big.Int)
-// 	return tokenBalance.Int64(), nftBalance.Int64(), nil
-// }
-
 // ValidateBasic implements the sdk.Msg interface.
 func (msg MsgCreateValidator) ValidateBasic() error {
 	// note that unmarshaling from bech32 ensures both non-empty and valid
@@ -181,19 +99,6 @@ func (msg MsgCreateValidator) ValidateBasic() error {
 	if !sdk.AccAddress(valAddr).Equals(delAddr) {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "validator address is invalid")
 	}
-
-	// tokenBalance, nftBalance, err := getBalances(msg.DelegatorAddress)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// if nftBalance < nxqconfig.MinValidatorNFTBalance {
-	// 	return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Insufficient NFT balance")
-	// }
-
-	// if tokenBalance < nxqconfig.MinValidatorToken {
-	// 	return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Insufficient Token balance")
-	// }
 
 	if msg.Pubkey == nil {
 		return ErrEmptyValidatorPubKey
@@ -283,7 +188,7 @@ func (msg MsgEditValidator) ValidateBasic() error {
 	}
 
 	if msg.CommissionRate != nil {
-		if msg.CommissionRate.GT(sdk.OneDec()) || msg.CommissionRate.IsNegative() {
+		if msg.CommissionRate.GT(math.LegacyOneDec()) || msg.CommissionRate.IsNegative() {
 			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "commission rate must be between 0 and 1 (inclusive)")
 		}
 	}
@@ -494,4 +399,25 @@ func (msg MsgCancelUnbondingDelegation) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+// GetSignBytes returns the raw bytes for a MsgUpdateParams message that
+// the expected signer needs to sign.
+func (m *MsgUpdateParams) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(m)
+	return sdk.MustSortJSON(bz)
+}
+
+// ValidateBasic executes sanity validation on the provided data
+func (m *MsgUpdateParams) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(m.Authority); err != nil {
+		return sdkerrors.Wrap(err, "invalid authority address")
+	}
+	return m.Params.Validate()
+}
+
+// GetSigners returns the expected signers for a MsgUpdateParams message
+func (m *MsgUpdateParams) GetSigners() []sdk.AccAddress {
+	addr, _ := sdk.AccAddressFromBech32(m.Authority)
+	return []sdk.AccAddress{addr}
 }
