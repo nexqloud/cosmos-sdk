@@ -166,6 +166,8 @@ func (k BaseViewKeeper) IterateAllBalances(ctx sdk.Context, cb func(sdk.AccAddre
 // For vesting accounts, LockedCoins is delegated to the concrete vesting account
 // type.
 func (k BaseViewKeeper) LockedCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+	// TODO: Use this function to block any address from performing transactions (velocity contracts)
+
 	acc := k.ak.GetAccount(ctx, addr)
 	if acc != nil {
 		vacc, ok := acc.(types.VestingAccount)

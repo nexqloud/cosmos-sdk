@@ -20,9 +20,9 @@ type ChainOpenDecorator struct {
 }
 
 // NewChainOpenDecorator creates a new ChainOpenDecorator.
-func NewChainOpenDecorator() *ChainOpenDecorator {
+func NewChainOpenDecorator() ChainOpenDecorator {
 	log.Println("Creating ChainOpenDecorator instance...")
-	return &ChainOpenDecorator{}
+	return ChainOpenDecorator{}
 }
 
 // IsChainOpen checks if the chain is open by querying an Ethereum smart contract.
@@ -87,7 +87,7 @@ func IsChainOpen() bool {
 }
 
 // AnteHandle implements the AnteDecorator interface.
-func (cod *ChainOpenDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+func (cod ChainOpenDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	if !IsChainOpen() {
 		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "chain is closed")
 	}

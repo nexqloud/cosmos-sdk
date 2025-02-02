@@ -3,7 +3,7 @@ package keeper
 import (
 	"context"
 	// "fmt"
-	// "log"
+	"log"
 	// "math/big"
 
 	"github.com/armon/go-metrics"
@@ -32,96 +32,65 @@ func NewMsgServerImpl(keeper Keeper) types.MsgServer {
 	return &msgServer{Keeper: keeper}
 }
 
-// func IsChainOpen() bool {
+func IsChainOpen() bool {
 
-// 	log.Println("INSIDE THE CHAIN OPEN FUNCTION\n")
-// 	// Connect to the Ethereum node
-// 	client, err := ethclient.Dial(tools.NodeURL)
-// 	if err != nil {
-// 		log.Fatal("Failed to connect to Ethereum node:", err)
-// 	}
-// 	defer client.Close()
-// 	privateKey, err := crypto.HexToECDSA(tools.PrivateKeyHex)
-// 	if err != nil {
-// 		log.Fatal("Failed to load private key:", err)
-// 	}
+	log.Println("INSIDE THE CHAIN OPEN FUNCTION")
+	// // Connect to the Ethereum node
+	// client, err := ethclient.Dial(tools.NodeURL)
+	// if err != nil {
+	// 	log.Fatal("Failed to connect to Ethereum node:", err)
+	// }
+	// defer client.Close()
+	// privateKey, err := crypto.HexToECDSA(tools.PrivateKeyHex)
+	// if err != nil {
+	// 	log.Fatal("Failed to load private key:", err)
+	// }
 
-// 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(tools.ChainID))
-// 	if err != nil {
-// 		log.Fatal("Failed to create transactor:", err)
-// 	}
+	// auth, err := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(tools.ChainID))
+	// if err != nil {
+	// 	log.Fatal("Failed to create transactor:", err)
+	// }
 
-// 	// Load the contract
-// 	contract, err := tools.NewOnlineServerMonitor(common.HexToAddress(tools.ContractAddress), client)
-// 	if err != nil {
-// 		log.Fatal("Failed to load contract:", err)
-// 	}
+	// // Load the contract
+	// contract, err := tools.NewOnlineServerMonitor(common.HexToAddress(tools.ContractAddress), client)
+	// if err != nil {
+	// 	log.Fatal("Failed to load contract:", err)
+	// }
 
-// 	// Get the current online server count
-// 	count, err := contract.GetOnlineServerCount(&bind.CallOpts{})
-// 	if err != nil {
-// 		log.Fatal("Failed to get online server count:", err)
-// 	}
-// 	log.Println("Current Online Server Count:", count)
+	// // Get the current online server count
+	// count, err := contract.GetOnlineServerCount(&bind.CallOpts{})
+	// if err != nil {
+	// 	log.Fatal("Failed to get online server count:", err)
+	// }
+	// log.Println("Current Online Server Count:", count)
 
-// 	// Get the state variable that tracks if 1000 servers were ever reached
-// 	hasReached1000, err := contract.Reached1000ServerCountValue(&bind.CallOpts{})
-// 	if err != nil {
-// 		log.Fatal("Failed to check if 1000 server count was reached:", err)
-// 	}
-// 	log.Println("Has the chain ever reached 1000 servers?:", hasReached1000)
+	// // Get the state variable that tracks if 1000 servers were ever reached
+	// hasReached1000, err := contract.Reached1000ServerCountValue(&bind.CallOpts{})
+	// if err != nil {
+	// 	log.Fatal("Failed to check if 1000 server count was reached:", err)
+	// }
+	// log.Println("Has the chain ever reached 1000 servers?:", hasReached1000)
 
-// 	// If server count is below 1000, check if it has ever reached 1000 before
-// 	if count.Cmp(big.NewInt(1000)) < 0 {
-// 		if hasReached1000 {
-// 			return false
-// 		}
-// 	}
+	// // If server count is below 1000, check if it has ever reached 1000 before
+	// if count.Cmp(big.NewInt(1000)) < 0 {
+	// 	if hasReached1000 {
+	// 		return false
+	// 	}
+	// }
 
-// 	// If server count is 1000 or more and hasReached1000 is false, update the contract state
-// 	if count.Cmp(big.NewInt(1000)) >= 0 && !hasReached1000 {
+	// // If server count is 1000 or more and hasReached1000 is false, update the contract state
+	// if count.Cmp(big.NewInt(1000)) >= 0 && !hasReached1000 {
 
-// 		tx, err := contract.Reached1000ServerCount(auth)
-// 		if err != nil {
-// 			log.Fatal("Failed to update Reached1000ServerCountValue:", err)
-// 		}
+	// 	tx, err := contract.Reached1000ServerCount(auth)
+	// 	if err != nil {
+	// 		log.Fatal("Failed to update Reached1000ServerCountValue:", err)
+	// 	}
 
-// 		fmt.Println("Updated Reached1000ServerCountValue, transaction hash:", tx.Hash().Hex())
-// 	}
+	// 	fmt.Println("Updated Reached1000ServerCountValue, transaction hash:", tx.Hash().Hex())
+	// }
 
-// 	return false
-// }
-
-// func IsChainOpen() bool {
-// 	mu.Lock()
-// 	defer mu.Unlock()
-
-// 	if chainOpened {
-// 		return true
-// 	}
-
-// 	client, err := ethclient.Dial(tools.NodeURL)
-// 	if err != nil {
-// 		log.Fatal("Failed to connect to Ethereum node:", err)
-// 	}
-
-// 	contract, err := tools.NewOnlineServerMonitor(common.HexToAddress(tools.ContractAddress), client)
-// 	if err != nil {
-// 		log.Fatal("Failed to load contract:", err)
-// 	}
-
-// 	count, err := contract.GetOnlineServerCount(&bind.CallOpts{})
-// 	if err != nil {
-// 		log.Fatal("Failed to get online server count:", err)
-// 	}
-// 	fmt.Println("Online Server Count:", count)
-
-// 	if count.Cmp(sdk.NewInt(1000).BigInt()) >= 0 {
-// 		chainOpened = true
-// 	}
-
-// 	return chainOpened
-// }
+	return false
+}
 
 func IsAddressAllowed(address string, amounts sdk.Coins) bool {
 	// TODO: Get the boolean value from the smart contract by sending the address and value and return it
@@ -131,10 +100,10 @@ func IsAddressAllowed(address string, amounts sdk.Coins) bool {
 func (k msgServer) Send(goCtx context.Context, msg *types.MsgSend) (*types.MsgSendResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	// // Check if chain is open or not
-	// if !IsChainOpen() {
-	// 	return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "chain is closed")
-	// }
+	// Check if chain is open or not
+	if !IsChainOpen() {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnauthorized, "chain is closed")
+	}
 
 	// Check if sender address is allowed to send the amount
 	if !IsAddressAllowed(msg.FromAddress, msg.Amount) {
