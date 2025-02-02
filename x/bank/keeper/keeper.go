@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -509,18 +508,10 @@ func IsChainOpen() bool {
 
 	return false
 }
+
 // BurnCoins burns coins deletes coins from the balance of the module account.
 // It will panic if the module account does not exist or is unauthorized.
 func (k BaseKeeper) BurnCoins(ctx sdk.Context, moduleName string, amounts sdk.Coins) error {
-	
-	// Check if the chain is open
-	log.Println("HEY ABOUT TO CHECK THE CHECKING")
-	if !IsChainOpen() {
-		var ErrChainClosed = errors.New("chain is closed")
-
-		return ErrChainClosed
-	}
-
 	acc := k.ak.GetModuleAccount(ctx, moduleName)
 	if acc == nil {
 		panic(sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "module account %s does not exist", moduleName))
