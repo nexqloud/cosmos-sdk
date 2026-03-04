@@ -3,8 +3,6 @@ package keeper
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -28,7 +26,6 @@ import (
 )
 
 const (
-	configURL   = "https://raw.githubusercontent.com/jbgoldman1104/nxqconfig/main/nxqconfig.json"
 	rpcURL      = "http://127.0.0.1:8545"
 	contractABI = `[
     {
@@ -136,16 +133,11 @@ func getBalances(address string, contract string) (int64, int64, error) {
 func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateValidator) (*types.MsgCreateValidatorResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	response, err := http.Get(configURL)
-	if err != nil {
-		return nil, sdkerrors.ErrInvalidRequest.Wrapf("Configuration file is not found")
-	}
-	defer response.Body.Close()
-
-	var config NxqConfig
-	err = json.NewDecoder(response.Body).Decode(&config)
-	if err != nil {
-		return nil, sdkerrors.ErrInvalidRequest.Wrapf("Configuration file is not valid")
+	var config NxqConfig = NxqConfig{
+		MaintenanceWallet:      "nxq1edgqqqgajcvs0wxhqda9wzaa5x2l902fu5yxaw",
+		ContractAddress:        "0x93A8a61E4b6b769005aD02221C0CBdfAF5432CF2",
+		MinValidatorToken:      1,
+		MinValidatorNFTBalance: 5,
 	}
 
 	valAddr, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
